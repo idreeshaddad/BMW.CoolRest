@@ -10,7 +10,11 @@ namespace BMW.CoolRest.Mvc.AutoMapperProfiles
         {
             CreateMap<Meal, MealListViewModel>();
             CreateMap<Meal, MealDetailsViewModel>();
-            CreateMap<Meal, CreateUpdateMealViewModel>().ReverseMap();
+            CreateMap<CreateUpdateMealViewModel, Meal>();
+
+            CreateMap<Meal, CreateUpdateMealViewModel>()
+                .ForMember(dest => dest.IngredientIds, 
+                           opts => opts.MapFrom(src => src.Ingredients.Select(ing => ing.Id).ToList()));
 
         }
     }

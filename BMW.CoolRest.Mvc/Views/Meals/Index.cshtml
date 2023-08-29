@@ -1,4 +1,5 @@
-﻿@model IEnumerable<BMW.CoolRest.Mvc.Data.Entities.Meal>
+﻿@using BMW.CoolRest.Mvc.Models.Meals;
+@model IEnumerable<MealListViewModel>
 
 @{
     ViewData["Title"] = "Meals";
@@ -34,7 +35,7 @@
                 @Html.DisplayFor(modelItem => meal.Description)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => meal.Price)
+                    @meal.Price.ToString("c")
             </td>
             <td>
                     <a class="text-decoration-none text-primary" asp-action="Edit" asp-route-id="@meal.Id" data-bs-toggle="tooltip" data-bs-title="Edit">

@@ -27,26 +27,36 @@ namespace BMW.CoolRest.Mvc.Controllers
 
         public async Task<IActionResult> Index()
         {
-            return _context.Meals != null ?
-                        View(await _context.Meals.ToListAsync()) :
-                        Problem("Entity set 'ApplicationDbContext.Meals'  is null.");
+            var meals = await _context
+                                .Meals
+                                .ToListAsync();
+
+            var mealVMs = _mapper.Map<List<MealListViewModel>>(meals);
+
+            return View(mealVMs);
         }
 
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int? id) 
         {
-            if (id == null || _context.Meals == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var meal = await _context.Meals
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var meal = await _context
+                                .Meals
+                                .Include(meal => meal.Ingredients)
+                                .Where(meal => meal.Id == id)
+                                .SingleOrDefaultAsync();
+                                
             if (meal == null)
             {
-                return NotFound();
+                return NotFound(); // 404
             }
 
-            return View(meal);
+            var mealVM = _mapper.Map<MealDetailsViewModel>(meal);
+
+            return View(mealVM);
         }
 
         public IActionResult Create()
@@ -59,30 +69,49 @@ namespace BMW.CoolRest.Mvc.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Meal meal)
+        public async Task<IActionResult> Create(CreateUpdateMealViewModel mealVM)
         {
             if (ModelState.IsValid)
             {
+                var meal = _mapper.Map<Meal>(mealVM);
+
+                await UpdateMealIngredients(meal, mealVM.IngredientIds);
+
                 _context.Add(meal);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(meal);
+
+            mealVM.IngredientsMultiselectList = new MultiSelectList(_context.Ingredients, "Id", "Name", mealVM.IngredientIds);
+            return View(mealVM);
         }
 
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.Meals == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var meal = await _context.Meals.FindAsync(id);
+            var meal = await _context
+                                .Meals
+                                .Include(meal => meal.Ingredients)
+                                .Where(meal => meal.Id == id)
+                                .SingleOrDefaultAsync();
+
             if (meal == null)
             {
                 return NotFound();
             }
-            return View(meal);
+
+            var mealVM = _mapper.Map<CreateUpdateMealViewModel>(meal);
+
+            // mealVM.IngredientIds = meal.Ingredients.Select(ing => ing.Id).ToList();
+            // Commented out because AutoMapper was informed how to extract Ids from the Enitity
+
+            mealVM.IngredientsMultiselectList = new MultiSelectList(_context.Ingredients, "Id", "Name", mealVM.IngredientIds);
+
+            return View(mealVM);
         }
 
         [HttpPost]
@@ -159,7 +188,17 @@ namespace BMW.CoolRest.Mvc.Controllers
         private bool MealExists(int id)
         {
             return (_context.Meals?.Any(e => e.Id == id)).GetValueOrDefault();
-        } 
+        }
+
+        private async Task UpdateMealIngredients(Meal meal, List<int> ingredientIds) // 11, 12
+        {
+            var ingredients = await _context
+                                        .Ingredients
+                                        .Where(ing => ingredientIds.Contains(ing.Id))
+                                        .ToListAsync();
+
+            meal.Ingredients.AddRange(ingredients);
+        }
 
         #endregion
     }

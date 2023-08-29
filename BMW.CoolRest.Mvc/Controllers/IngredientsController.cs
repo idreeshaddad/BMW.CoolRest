@@ -133,23 +133,6 @@ namespace BMW.CoolRest.Mvc.Controllers
             return View(ingredientVM);
         }
 
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null || _context.Ingredients == null)
-            {
-                return NotFound();
-            }
-
-            var ingredient = await _context.Ingredients
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (ingredient == null)
-            {
-                return NotFound();
-            }
-
-            return View(ingredient);
-        }
-
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

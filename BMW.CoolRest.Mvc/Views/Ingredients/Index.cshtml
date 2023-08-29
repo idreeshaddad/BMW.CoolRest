@@ -31,7 +31,7 @@
                     @Html.DisplayFor(modelItem => ingredient.Name)
                 </td>
                 <td>
-                    @Html.DisplayFor(modelItem => ingredient.Price)
+                    @ingredient.Price.ToString("c")
                 </td>
                 <td>
                     <a class="text-decoration-none text-primary" asp-action="Edit" asp-route-id="@ingredient.Id" data-bs-toggle="tooltip" data-bs-title="Edit">

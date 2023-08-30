@@ -25,6 +25,7 @@ namespace BMW.CoolRest.Mvc.Controllers
 
         #region Actions
 
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
             var meals = await _context
@@ -36,6 +37,7 @@ namespace BMW.CoolRest.Mvc.Controllers
             return View(mealVMs);
         }
 
+        [HttpGet]
         public async Task<IActionResult> Details(int? id) 
         {
             if (id == null)
@@ -59,6 +61,7 @@ namespace BMW.CoolRest.Mvc.Controllers
             return View(mealVM);
         }
 
+        [HttpGet]
         public IActionResult Create()
         {
             var vm = new CreateUpdateMealViewModel();
@@ -86,6 +89,7 @@ namespace BMW.CoolRest.Mvc.Controllers
             return View(mealVM);
         }
 
+        [HttpGet]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -116,15 +120,29 @@ namespace BMW.CoolRest.Mvc.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Meal meal)
+        public async Task<IActionResult> Edit(int id, CreateUpdateMealViewModel mealVM)
         {
-            if (id != meal.Id)
+            if (id != mealVM.Id)
             {
                 return NotFound();
             }
 
             if (ModelState.IsValid)
             {
+                var meal = await _context
+                                .Meals
+                                .Include(meal => meal.Ingredients)
+                                .SingleOrDefaultAsync(meal => meal.Id == id);
+
+                if(meal == null)
+                {
+                    return NotFound();
+                }
+
+                _mapper.Map(mealVM, meal);
+
+                await UpdateMealIngredients(meal, mealVM.IngredientIds);
+
                 try
                 {
                     _context.Update(meal);
@@ -132,7 +150,7 @@ namespace BMW.CoolRest.Mvc.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!MealExists(meal.Id))
+                    if (!MealExists(mealVM.Id))
                     {
                         return NotFound();
                     }
@@ -143,24 +161,10 @@ namespace BMW.CoolRest.Mvc.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(meal);
-        }
 
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null || _context.Meals == null)
-            {
-                return NotFound();
-            }
 
-            var meal = await _context.Meals
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (meal == null)
-            {
-                return NotFound();
-            }
-
-            return View(meal);
+            mealVM.IngredientsMultiselectList = new MultiSelectList(_context.Ingredients, "Id", "Name", mealVM.IngredientIds);
+            return View(mealVM);
         }
 
         [HttpPost, ActionName("Delete")]
@@ -196,6 +200,8 @@ namespace BMW.CoolRest.Mvc.Controllers
                                         .Ingredients
                                         .Where(ing => ingredientIds.Contains(ing.Id))
                                         .ToListAsync();
+
+            meal.Ingredients.Clear();
 
             meal.Ingredients.AddRange(ingredients);
         }

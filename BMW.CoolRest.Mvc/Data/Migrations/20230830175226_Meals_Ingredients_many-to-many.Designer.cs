@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BMW.CoolRest.Mvc.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230828175921_Ingredients_Meals")]
-    partial class Ingredients_Meals
+    [Migration("20230830175226_Meals_Ingredients_many-to-many")]
+    partial class Meals_Ingredients_manytomany
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,9 +33,6 @@ namespace BMW.CoolRest.Mvc.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("MealId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -44,8 +41,6 @@ namespace BMW.CoolRest.Mvc.Data.Migrations
                         .HasColumnType("float");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("MealId");
 
                     b.ToTable("Ingredients");
                 });
@@ -72,6 +67,21 @@ namespace BMW.CoolRest.Mvc.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Meals");
+                });
+
+            modelBuilder.Entity("IngredientMeal", b =>
+                {
+                    b.Property<int>("IngredientsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MealsId")
+                        .HasColumnType("int");
+
+                    b.HasKey("IngredientsId", "MealsId");
+
+                    b.HasIndex("MealsId");
+
+                    b.ToTable("IngredientMeal");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -276,11 +286,19 @@ namespace BMW.CoolRest.Mvc.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("BMW.CoolRest.Mvc.Data.Entities.Ingredient", b =>
+            modelBuilder.Entity("IngredientMeal", b =>
                 {
+                    b.HasOne("BMW.CoolRest.Mvc.Data.Entities.Ingredient", null)
+                        .WithMany()
+                        .HasForeignKey("IngredientsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("BMW.CoolRest.Mvc.Data.Entities.Meal", null)
-                        .WithMany("Ingredients")
-                        .HasForeignKey("MealId");
+                        .WithMany()
+                        .HasForeignKey("MealsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -332,11 +350,6 @@ namespace BMW.CoolRest.Mvc.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("BMW.CoolRest.Mvc.Data.Entities.Meal", b =>
-                {
-                    b.Navigation("Ingredients");
                 });
 #pragma warning restore 612, 618
         }

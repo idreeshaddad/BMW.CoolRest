@@ -80,6 +80,8 @@ namespace BMW.CoolRest.Mvc.Controllers
 
                 await UpdateMealIngredients(meal, mealVM.IngredientIds);
 
+                CalculateMealPrice(meal);
+
                 _context.Add(meal);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -120,6 +122,7 @@ namespace BMW.CoolRest.Mvc.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // www.ismael.com/Meals/Edit/1 (The Body of the Request mealVM)
         public async Task<IActionResult> Edit(int id, CreateUpdateMealViewModel mealVM)
         {
             if (id != mealVM.Id)
@@ -142,6 +145,8 @@ namespace BMW.CoolRest.Mvc.Controllers
                 _mapper.Map(mealVM, meal);
 
                 await UpdateMealIngredients(meal, mealVM.IngredientIds);
+
+                CalculateMealPrice(meal);
 
                 try
                 {
@@ -204,6 +209,23 @@ namespace BMW.CoolRest.Mvc.Controllers
             meal.Ingredients.Clear();
 
             meal.Ingredients.AddRange(ingredients);
+        }
+
+        private void CalculateMealPrice(Meal meal)
+        {
+            meal.Price = meal.Ingredients.Sum(ingredient => ingredient.Price);
+
+
+
+            // The above INTERNALLY does the below
+            //double totaIngredientslPrice = 0;
+            
+            //foreach(var ingredient in meal.Ingredients)
+            //{
+            //    totaIngredientslPrice = totaIngredientslPrice + ingredient.Price;
+            //}
+
+            //meal.Price = totaIngredientslPrice;
         }
 
         #endregion
